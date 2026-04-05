@@ -277,14 +277,10 @@ Submissions are evaluated on:
 
 ## 👥 Team
 
-**Code Catalyst** — Meta × Scaler OpenEnv Hackathon 2024
+**Code Catalyst** — Meta × Scaler OpenEnv Hackathon 2026
 
 - Ansh Mahajan *(Team Lead)*
 - Deepak Singh Garakoti
 - Devansh Tanwar
 
 ---
-
-## 📄 License
-
-MIT License — see `LICENSE` for details.
