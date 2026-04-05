@@ -1,0 +1,302 @@
+[
+  {
+    "id": "easy_001",
+    "difficulty": "easy",
+    "subject": "URGENT: Cannot access my account - payment due today",
+    "body": "Hi, I absolutely cannot log into my account and my payment is due TODAY. I will be charged a late fee if this is not resolved immediately. Please fix this ASAP. My account ID is #84921.",
+    "sender": "john.doe@gmail.com",
+    "timestamp": "2024-03-15T09:00:00Z",
+    "ground_truth": {
+      "priority": "urgent",
+      "category": "billing",
+      "route": "billing_support",
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "Explicit urgency signals: 'URGENT', 'today', 'ASAP', 'late fee'. Clear billing issue."
+  },
+  {
+    "id": "easy_002",
+    "difficulty": "easy",
+    "subject": "Applying for the Software Engineer position",
+    "body": "Hello, I am writing to apply for the Software Engineer position listed on your website. I have attached my resume and cover letter. I have 5 years of experience in Python and cloud infrastructure. Looking forward to hearing from you.",
+    "sender": "candidate.jane@outlook.com",
+    "timestamp": "2024-03-15T10:30:00Z",
+    "ground_truth": {
+      "priority": "low",
+      "category": "hr",
+      "route": "hr_recruitment",
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "Clear job application. No urgency. Unambiguous HR/recruitment routing."
+  },
+  {
+    "id": "easy_003",
+    "difficulty": "easy",
+    "subject": "Server is DOWN - production outage RIGHT NOW",
+    "body": "CRITICAL ALERT: Our production server has been down for 30 minutes. We are losing $10,000 per minute. All customers are affected. Engineers are on standby waiting for your team to respond. This is a P0 incident.",
+    "sender": "ops-team@enterprise-client.com",
+    "timestamp": "2024-03-15T11:00:00Z",
+    "ground_truth": {
+      "priority": "urgent",
+      "category": "technical_support",
+      "route": "engineering_escalation",
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "Explicit outage, financial impact stated. Clearly technical, must go to engineering."
+  },
+  {
+    "id": "easy_004",
+    "difficulty": "easy",
+    "subject": "Question about your pricing plans",
+    "body": "Hi there, I came across your product online and I am interested in learning more about your pricing plans for small businesses. Could you send me a comparison of your Basic and Pro tiers? No rush, just exploring options at the moment.",
+    "sender": "smallbiz.owner@yahoo.com",
+    "timestamp": "2024-03-15T13:00:00Z",
+    "ground_truth": {
+      "priority": "low",
+      "category": "sales",
+      "route": "sales_team",
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "Prospect inquiry, no urgency ('no rush'). Classic inbound sales lead."
+  },
+  {
+    "id": "easy_005",
+    "difficulty": "easy",
+    "subject": "How do I reset my password?",
+    "body": "Hello support team, I forgot my password and need help resetting it. I tried the 'Forgot Password' link but I am not receiving the reset email. Can you help me?",
+    "sender": "regular.user@gmail.com",
+    "timestamp": "2024-03-15T14:00:00Z",
+    "ground_truth": {
+      "priority": "normal",
+      "category": "technical_support",
+      "route": "tier1_support",
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "Common support ticket, no urgency but needs resolution. Tier 1 handles password resets."
+  },
+
+  {
+    "id": "medium_001",
+    "difficulty": "medium",
+    "subject": "Really disappointed with my experience",
+    "body": "I have been a customer for 3 years and I have never been this frustrated. My invoice from last month looks wrong — I was charged for the premium plan but I downgraded in January. I have sent two emails already with no response. I am seriously considering switching to a competitor if this is not resolved soon.",
+    "sender": "long.term.customer@hotmail.com",
+    "timestamp": "2024-03-15T09:30:00Z",
+    "ground_truth": {
+      "priority": "urgent",
+      "category": "billing",
+      "route": "billing_support",
+      "acceptable_routes": ["billing_support", "customer_retention"],
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "No explicit 'URGENT' keyword but churn signal is high. Frustrated tone + billing dispute + no previous response = urgent. Route to billing_support or customer_retention both valid."
+  },
+  {
+    "id": "medium_002",
+    "difficulty": "medium",
+    "subject": "Follow up on our demo last week",
+    "body": "Hi, we had a product demo last Tuesday with your sales rep, Michael. We are very interested but have a few technical questions before we can proceed: Does your platform support SSO with Okta? What is the uptime SLA? Our IT team also wants to know about your data residency options for EU compliance. We have a board meeting in 2 weeks where we'd like to present this.",
+    "sender": "cto@potential-enterprise.com",
+    "timestamp": "2024-03-15T10:00:00Z",
+    "ground_truth": {
+      "priority": "normal",
+      "category": "sales",
+      "route": "sales_engineering",
+      "acceptable_routes": ["sales_engineering", "sales_team"],
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "Looks technical but it's a pre-sales inquiry. The 2-week timeline makes it normal priority. Needs sales engineer (technical + sales overlap), not pure support."
+  },
+  {
+    "id": "medium_003",
+    "difficulty": "medium",
+    "subject": "Issue with API integration",
+    "body": "Our integration has been returning 429 errors since yesterday afternoon. We have checked our usage and we are well within our plan limits (we're on Enterprise). Our developers have been stuck on this for 18 hours and it is starting to impact our product. Attached are the error logs.",
+    "sender": "dev-lead@startup-client.io",
+    "timestamp": "2024-03-15T11:30:00Z",
+    "ground_truth": {
+      "priority": "urgent",
+      "category": "technical_support",
+      "route": "engineering_escalation",
+      "acceptable_routes": ["engineering_escalation", "tier2_support"],
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "18 hours of impact on an enterprise client + rate limiting within plan = not a Tier 1 issue. Urgency is implied by duration and business impact, not stated explicitly."
+  },
+  {
+    "id": "medium_004",
+    "difficulty": "medium",
+    "subject": "Feedback on the new dashboard update",
+    "body": "Hello, I wanted to share some thoughts on the dashboard update you released this week. I appreciate the new design but several of my team members are struggling to find features they use daily — especially the export function and the filters panel. Could you consider adding a 'classic mode' or at least better documentation? We are a team of 50 and it is slowing us down.",
+    "sender": "team.manager@corp-user.com",
+    "timestamp": "2024-03-15T14:30:00Z",
+    "ground_truth": {
+      "priority": "normal",
+      "category": "product_feedback",
+      "route": "product_team",
+      "acceptable_routes": ["product_team", "customer_success"],
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "Polite but has real business impact (team of 50 slowed down). Not urgent enough to escalate. Product feedback, not a support ticket."
+  },
+  {
+    "id": "medium_005",
+    "difficulty": "medium",
+    "subject": "Need invoice for tax purposes",
+    "body": "Hi, our fiscal year ends this Friday and our finance team urgently needs the invoice for our annual subscription paid in December. We cannot file our taxes without it. Please send it to finance@our-company.com as soon as possible.",
+    "sender": "office.manager@sme-business.com",
+    "timestamp": "2024-03-15T08:00:00Z",
+    "ground_truth": {
+      "priority": "urgent",
+      "category": "billing",
+      "route": "billing_support",
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "Fiscal year deadline on Friday makes this time-sensitive/urgent even though the tone is polite. Billing doc request."
+  },
+
+  {
+    "id": "hard_001",
+    "difficulty": "hard",
+    "subject": "Multiple issues - need immediate help",
+    "body": "I am writing because I have several things to address. First, I was charged twice for my subscription this month — please refund the duplicate charge immediately. Second, I have been trying to use the new AI feature but it keeps crashing my browser. Third, I am actually quite happy with the product overall and wanted to ask if you have a referral program — I have colleagues who might be interested. Please handle the billing issue first as it is most urgent.",
+    "sender": "power.user@gmail.com",
+    "timestamp": "2024-03-15T10:00:00Z",
+    "ground_truth": {
+      "priority": "urgent",
+      "category": "billing",
+      "secondary_category": "technical_support",
+      "tertiary_category": "sales",
+      "route": "billing_support",
+      "secondary_route": "tier2_support",
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "Three intents in one email. Agent must identify PRIMARY intent (billing/urgent per user's own words), not just the last thing mentioned. Also tests whether agent catches secondary technical issue."
+  },
+  {
+    "id": "hard_002",
+    "difficulty": "hard",
+    "subject": "Formal complaint and legal notice",
+    "body": "Dear Sir/Madam, I am writing to formally notify you that if my account data is not deleted within 72 hours as required by GDPR Article 17, I will be filing a complaint with the Information Commissioner's Office and may pursue legal action. I have made this request twice before (tickets #4421 and #4567) without resolution. I expect a written confirmation of deletion with a timestamp.",
+    "sender": "gdpr.complainant@protonmail.com",
+    "timestamp": "2024-03-15T11:00:00Z",
+    "ground_truth": {
+      "priority": "urgent",
+      "category": "legal_compliance",
+      "route": "legal_team",
+      "acceptable_routes": ["legal_team", "data_privacy_officer"],
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "Requires domain knowledge: GDPR = legal/compliance, not support. 72-hour legal deadline. Agent must not route to regular support — this is a legal escalation. High risk if misrouted."
+  },
+  {
+    "id": "hard_003",
+    "difficulty": "hard",
+    "subject": "Re: Re: Re: Re: Account migration help",
+    "body": "As per the thread below, we have been going back and forth for 2 weeks on migrating our 500-seat enterprise account to the new infrastructure. I understand there are technical complexities but our contract renewal is in 10 days and we will NOT renew if the migration is incomplete. Our CTO and CFO are now involved and watching this closely. The previous support agent said it would be done 'by end of last week'. This is completely unacceptable. I need a senior engineer AND a customer success manager on a call by tomorrow.",
+    "sender": "vp-operations@large-enterprise.com",
+    "timestamp": "2024-03-15T09:00:00Z",
+    "ground_truth": {
+      "priority": "urgent",
+      "category": "technical_support",
+      "secondary_category": "sales",
+      "route": "engineering_escalation",
+      "secondary_route": "customer_retention",
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "Layered context: ongoing migration (technical) + renewal threat (sales/retention) + executive escalation. Agent must detect the churn risk embedded in a technical thread. Needs both eng + CS."
+  },
+  {
+    "id": "hard_004",
+    "difficulty": "hard",
+    "subject": "Confidential: Employee misconduct report",
+    "body": "I am sending this confidentially. I believe my manager has been falsifying expense reports using the company account on your platform. I have screenshots but I am afraid of retaliation if I report this internally. I work at TechCorp Ltd, account #TEC-2291. I am not sure who to contact — I just know it is happening through your billing system. Please treat this with discretion.",
+    "sender": "anonymous.reporter77@tempmail.com",
+    "timestamp": "2024-03-15T22:00:00Z",
+    "ground_truth": {
+      "priority": "urgent",
+      "category": "legal_compliance",
+      "route": "legal_team",
+      "acceptable_routes": ["legal_team", "compliance_team"],
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "Disguised as a billing issue but is actually a fraud/whistleblower report. Must not route to billing or generic support. Requires legal/compliance. Tests whether agent reads intent vs surface category."
+  },
+  {
+    "id": "hard_005",
+    "difficulty": "hard",
+    "subject": "Partnership proposal + urgent API access needed",
+    "body": "Hi, I am the founder of DataSync AI, a startup building on top of your API. We would love to explore a formal partnership or reseller agreement — I believe there is strong mutual value here. Separately and more urgently, our API key was suddenly revoked this morning with no explanation, which has taken down our entire product for our 200 paying customers. Can you restore access immediately while we sort out the partnership discussion in parallel? Happy to jump on a call anytime today.",
+    "sender": "founder@datasync-ai.com",
+    "timestamp": "2024-03-15T10:30:00Z",
+    "ground_truth": {
+      "priority": "urgent",
+      "category": "technical_support",
+      "secondary_category": "sales",
+      "route": "engineering_escalation",
+      "secondary_route": "partnerships_team",
+      "reward_breakdown": {
+        "priority_weight": 0.35,
+        "category_weight": 0.35,
+        "route_weight": 0.30
+      }
+    },
+    "notes": "Two parallel threads: partnership (sales/non-urgent) and API revocation (urgent/technical). Agent must triage the urgent issue first while flagging the secondary intent. Tests prioritization under dual-intent."
+  }
+]
