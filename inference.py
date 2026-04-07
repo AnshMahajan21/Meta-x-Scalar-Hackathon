@@ -33,6 +33,45 @@ client = OpenAI(
 
 TASKS = ["easy_triage", "medium_triage", "hard_triage"]
 
+# ── Valid enum values (mirrors models.py) — used to sanitise LLM output ──────
+VALID_PRIORITIES  = {"urgent", "normal", "low"}
+VALID_CATEGORIES  = {
+    "billing", "technical_support", "sales", "hr",
+    "product_feedback", "legal_compliance", "other",
+}
+VALID_ROUTES      = {
+    "billing_support", "tier1_support", "tier2_support", "engineering_escalation",
+    "sales_team", "sales_engineering", "hr_recruitment", "product_team",
+    "customer_success", "customer_retention", "legal_team", "compliance_team",
+    "data_privacy_officer", "partnerships_team",
+}
+
+
+def _sanitise(decision: dict) -> dict:
+    """
+    Coerce any invalid or unexpected LLM output values to safe defaults
+    before the dict is sent to the FastAPI /step endpoint.
+    Prevents Pydantic validation errors from crashing the episode.
+    """
+    decision["priority"] = (
+        decision.get("priority") if decision.get("priority") in VALID_PRIORITIES else "normal"
+    )
+    decision["category"] = (
+        decision.get("category") if decision.get("category") in VALID_CATEGORIES else "other"
+    )
+    decision["route"] = (
+        decision.get("route") if decision.get("route") in VALID_ROUTES else "tier1_support"
+    )
+    # Optional fields: nullify anything that isn't a known enum value
+    # (catches "none", "None", "N/A", empty string, etc.)
+    sc = decision.get("secondary_category")
+    decision["secondary_category"] = sc if sc in VALID_CATEGORIES else None
+
+    sr = decision.get("secondary_route")
+    decision["secondary_route"] = sr if sr in VALID_ROUTES else None
+
+    return decision
+
 SYSTEM_PROMPT = """You are an expert email triage assistant. 
 Your job is to read an email and decide:
 1. priority   — must be exactly one of: urgent, normal, low
@@ -91,28 +130,28 @@ Respond with a JSON object only."""
                 raw = raw[4:]
         raw = raw.strip()
 
-        return json.loads(raw)
+        return _sanitise(json.loads(raw))
 
     except json.JSONDecodeError:
         # Fallback: safe default action
-        return {
+        return _sanitise({
             "priority":           "normal",
             "category":           "other",
             "route":              "tier1_support",
             "secondary_category": None,
             "secondary_route":    None,
             "reasoning":          "JSON parse failed — using fallback",
-        }
+        })
     except Exception as e:
         print(f"[WARN] LLM call failed: {e}", file=sys.stderr)
-        return {
+        return _sanitise({
             "priority":           "normal",
             "category":           "other",
             "route":              "tier1_support",
             "secondary_category": None,
             "secondary_route":    None,
             "reasoning":          f"LLM error: {str(e)}",
-        }
+        })
 
 
 def run_task(task_id: str) -> dict:

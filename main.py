@@ -14,6 +14,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+random.seed(42)  # ensures reproducible email ordering across evaluation runs
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 
@@ -23,7 +25,7 @@ from models import (
     TriageState,
     StepResult,
 )
-from graders.triage_grader import grade
+from triage_grader_v2 import grade
 
 
 # ── App setup ─────────────────────────────────────────────────────────────────
@@ -40,6 +42,12 @@ app = FastAPI(
 # ── Load email dataset once at startup ────────────────────────────────────────
 
 DATA_PATH = Path(__file__).parent / "data" / "emails.json"
+
+if not DATA_PATH.exists():
+    raise RuntimeError(
+        f"emails.json not found at {DATA_PATH}. "
+        "Ensure the data/ directory is present and contains emails.json."
+    )
 
 with open(DATA_PATH) as f:
     ALL_EMAILS: list[dict] = json.load(f)
