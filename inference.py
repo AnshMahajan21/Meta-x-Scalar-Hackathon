@@ -4,12 +4,10 @@ inference.py — Baseline Agent for Email Triage Environment
 Runs the agent across all 3 tasks (easy → medium → hard).
 Uses OpenAI client pointed at API_BASE_URL / MODEL_NAME / HF_TOKEN.
 
-Log format is STRICTLY:
+Log format:
   [START] {"task_id": ..., "episode_id": ...}
   [STEP]  {"step": ..., "email_id": ..., "action": {...}, "reward": ..., "done": ...}
   [END]   {"task_id": ..., "total_reward": ..., "steps": ...}
-
-Any deviation causes incorrect evaluation scoring — do NOT modify the log format.
 """
 
 import os
@@ -51,7 +49,6 @@ def _sanitise(decision: dict) -> dict:
     """
     Coerce any invalid or unexpected LLM output values to safe defaults
     before the dict is sent to the FastAPI /step endpoint.
-    Prevents Pydantic validation errors from crashing the episode.
     """
     decision["priority"] = (
         decision.get("priority") if decision.get("priority") in VALID_PRIORITIES else "normal"
@@ -62,8 +59,6 @@ def _sanitise(decision: dict) -> dict:
     decision["route"] = (
         decision.get("route") if decision.get("route") in VALID_ROUTES else "tier1_support"
     )
-    # Optional fields: nullify anything that isn't a known enum value
-    # (catches "none", "None", "N/A", empty string, etc.)
     sc = decision.get("secondary_category")
     decision["secondary_category"] = sc if sc in VALID_CATEGORIES else None
 
@@ -71,6 +66,12 @@ def _sanitise(decision: dict) -> dict:
     decision["secondary_route"] = sr if sr in VALID_ROUTES else None
 
     return decision
+
+
+def _log(tag: str, data: dict):
+    """Print a structured log line to stdout in the format evaluators expect."""
+    print(f"[{tag}] {json.dumps(data)}", flush=True)
+
 
 SYSTEM_PROMPT = """You are an expert email triage assistant. 
 Your job is to read an email and decide:
@@ -119,7 +120,7 @@ Respond with a JSON object only."""
                 {"role": "user",   "content": user_message},
             ],
             max_tokens=300,
-            temperature=0.1,   # low temp for consistent structured output
+            temperature=0.1,
         )
         raw = response.choices[0].message.content.strip()
 
@@ -133,7 +134,6 @@ Respond with a JSON object only."""
         return _sanitise(json.loads(raw))
 
     except json.JSONDecodeError:
-        # Fallback: safe default action
         return _sanitise({
             "priority":           "normal",
             "category":           "other",
@@ -162,17 +162,16 @@ def run_task(task_id: str) -> dict:
     reset_resp.raise_for_status()
     obs = reset_resp.json()
 
-    # Grab episode_id from state (reset doesn't return it directly)
+    # Grab episode_id from state
     state_resp = requests.get(f"{ENV_URL}/state")
     state_resp.raise_for_status()
     episode_id = state_resp.json().get("episode_id", "unknown")
 
-    # ── [START] log ───────────────────────────────────────────────────────────
-    print(json.dumps({
-        "log_type":  "START",
-        "task_id":   task_id,
+    # ── [START] ───────────────────────────────────────────────────────────────
+    _log("START", {
+        "task_id":    task_id,
         "episode_id": episode_id,
-    }), flush=True)
+    })
 
     total_reward = 0.0
     step_num     = 0
@@ -188,7 +187,7 @@ def run_task(task_id: str) -> dict:
             sender=obs["sender"],
         )
 
-        # Build action payload — filter None values
+        # Build action payload
         action_payload = {
             "priority": llm_decision.get("priority", "normal"),
             "category": llm_decision.get("category", "other"),
@@ -217,31 +216,29 @@ def run_task(task_id: str) -> dict:
         # Update obs for next step
         obs = result["observation"]
 
-        # ── [STEP] log ────────────────────────────────────────────────────────
-        print(json.dumps({
-            "log_type":  "STEP",
-            "task_id":   task_id,
-            "episode_id": episode_id,
-            "step":      step_num,
-            "email_id":  result["info"].get("graded_email_id", "unknown"),
-            "action":    action_payload,
-            "reward":    reward,
-            "done":      done,
+        # ── [STEP] ────────────────────────────────────────────────────────────
+        _log("STEP", {
+            "task_id":           task_id,
+            "episode_id":        episode_id,
+            "step":              step_num,
+            "email_id":          result["info"].get("graded_email_id", "unknown"),
+            "action":            action_payload,
+            "reward":            reward,
+            "done":              done,
             "cumulative_reward": result["info"].get("cumulative_reward", total_reward),
-        }), flush=True)
+        })
 
         # Small delay to avoid hammering the API
         time.sleep(0.5)
 
-    # ── [END] log ─────────────────────────────────────────────────────────────
-    print(json.dumps({
-        "log_type":     "END",
+    # ── [END] ─────────────────────────────────────────────────────────────────
+    _log("END", {
         "task_id":      task_id,
         "episode_id":   episode_id,
         "total_reward": round(total_reward, 4),
         "steps":        step_num,
         "avg_reward":   round(total_reward / max(step_num, 1), 4),
-    }), flush=True)
+    })
 
     return {
         "task_id":      task_id,
@@ -277,15 +274,13 @@ def main():
             all_results.append(result)
         except Exception as e:
             print(f"[ERROR] Task {task_id} failed: {e}", file=sys.stderr)
-            # Log a zero-score END so evaluator doesn't crash
-            print(json.dumps({
-                "log_type":     "END",
+            _log("END", {
                 "task_id":      task_id,
                 "episode_id":   "error",
                 "total_reward": 0.0,
                 "steps":        0,
                 "avg_reward":   0.0,
-            }), flush=True)
+            })
 
     # Final summary to stderr (not evaluated)
     print("\n[INFO] === Final Summary ===", file=sys.stderr)
