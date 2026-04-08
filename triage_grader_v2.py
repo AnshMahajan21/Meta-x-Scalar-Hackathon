@@ -8,12 +8,11 @@ Reward breakdown:
   category  → 0.35
   route     → 0.30
 
-For medium/hard emails, `acceptable_routes` lists additional valid routes.
-For hard emails with secondary intents, bonus credit is awarded.
-
 Secondary intent penalties:
   ignored (ground truth exists, agent gave None) → heavier penalty
   wrong   (agent guessed, but incorrectly)       → lighter penalty
+
+Note: Final reward is clamped to (0.001, 0.999) — strictly between 0 and 1.
 """
 
 from __future__ import annotations
@@ -25,17 +24,20 @@ from models import TriageAction
 PRIORITY_WEIGHT = 0.35
 CATEGORY_WEIGHT = 0.35
 ROUTE_WEIGHT    = 0.30
-SECONDARY_BONUS = 0.10   # extra reward for catching secondary intent on hard tasks
+SECONDARY_BONUS = 0.10
 
-# ── Penalty tuning knobs ─────────────────────────────────────────────────────
-SECONDARY_IGNORED_PENALTY  = 0.05   # agent didn't even try when GT exists
-SECONDARY_WRONG_PENALTY    = 0.02   # agent tried but got it wrong
+SECONDARY_IGNORED_PENALTY = 0.05
+SECONDARY_WRONG_PENALTY   = 0.02
+
+# Strict bounds — evaluator rejects exactly 0.0 and 1.0
+REWARD_MIN = 0.001
+REWARD_MAX = 0.999
 
 
 def grade(action: TriageAction, ground_truth: dict[str, Any]) -> dict[str, Any]:
     """
     Returns a dict with:
-        reward      – float 0.0–1.0
+        reward      – float strictly in (0, 1)
         breakdown   – per-field scores
         feedback    – human-readable explanation
     """
@@ -82,17 +84,15 @@ def grade(action: TriageAction, ground_truth: dict[str, Any]) -> dict[str, Any]:
             f"(acceptable: {acceptable_routes}). (+0.0)"
         )
 
-    # ── Secondary intent (bonus + penalties, hard tasks only) ─────────────────
+    # ── Secondary intent (bonus + penalties) ─────────────────────────────────
     secondary_score    = 0.0
     secondary_feedback = []
 
     gt_has_secondary_cat   = bool(ground_truth.get("secondary_category"))
     gt_has_secondary_route = bool(ground_truth.get("secondary_route"))
 
-    # — secondary category —
     if gt_has_secondary_cat:
         if action.secondary_category is None:
-            # Agent ignored it entirely → heavier penalty
             secondary_score -= SECONDARY_IGNORED_PENALTY
             secondary_feedback.append(
                 f"⚠️  Secondary category ignored (expected "
@@ -100,14 +100,12 @@ def grade(action: TriageAction, ground_truth: dict[str, Any]) -> dict[str, Any]:
                 f"(-{SECONDARY_IGNORED_PENALTY})"
             )
         elif action.secondary_category.value == ground_truth["secondary_category"]:
-            # Correct
             secondary_score += SECONDARY_BONUS / 2
             secondary_feedback.append(
                 f"✅ Secondary category '{action.secondary_category.value}' correct. "
                 f"(+{SECONDARY_BONUS / 2})"
             )
         else:
-            # Wrong guess → lighter penalty
             secondary_score -= SECONDARY_WRONG_PENALTY
             secondary_feedback.append(
                 f"❌ Secondary category '{action.secondary_category.value}' wrong "
@@ -115,7 +113,6 @@ def grade(action: TriageAction, ground_truth: dict[str, Any]) -> dict[str, Any]:
                 f"(-{SECONDARY_WRONG_PENALTY})"
             )
 
-    # — secondary route —
     if gt_has_secondary_route:
         acceptable_secondary = ground_truth.get(
             "acceptable_secondary_routes",
@@ -123,21 +120,18 @@ def grade(action: TriageAction, ground_truth: dict[str, Any]) -> dict[str, Any]:
         )
 
         if action.secondary_route is None:
-            # Agent ignored it entirely → heavier penalty
             secondary_score -= SECONDARY_IGNORED_PENALTY
             secondary_feedback.append(
                 f"⚠️  Secondary route ignored (expected one of "
                 f"{acceptable_secondary}). (-{SECONDARY_IGNORED_PENALTY})"
             )
         elif action.secondary_route.value in acceptable_secondary:
-            # Correct
             secondary_score += SECONDARY_BONUS / 2
             secondary_feedback.append(
                 f"✅ Secondary route '{action.secondary_route.value}' correct. "
                 f"(+{SECONDARY_BONUS / 2})"
             )
         else:
-            # Wrong guess → lighter penalty
             secondary_score -= SECONDARY_WRONG_PENALTY
             secondary_feedback.append(
                 f"❌ Secondary route '{action.secondary_route.value}' wrong "
@@ -148,9 +142,9 @@ def grade(action: TriageAction, ground_truth: dict[str, Any]) -> dict[str, Any]:
     breakdown["secondary"] = secondary_score
     feedback.extend(secondary_feedback)
 
-    # ── Total reward (clamped to [0.0, 1.0]) ──────────────────────────────────
+    # ── Total reward (clamped strictly between 0 and 1) ───────────────────────
     raw_reward = sum(breakdown.values())
-    reward     = min(max(round(raw_reward, 4), 0.0), 1.0)
+    reward     = min(max(round(raw_reward, 4), REWARD_MIN), REWARD_MAX)
 
     feedback.append(f"\n📊 Total reward: {reward:.4f} / 1.0")
 
