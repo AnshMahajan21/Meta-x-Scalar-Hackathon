@@ -24,7 +24,9 @@ COPY models.py            .
 COPY inference.py         .
 COPY triage_grader_v2.py  .
 COPY openenv.yaml         .
+COPY pyproject.toml       .
 COPY data/                ./data/
+COPY server/              ./server/
 
 # ── Environment variables (overridden at runtime) ─────────────────────────────
 ENV API_BASE_URL="https://api-inference.huggingface.co/v1"
