@@ -2,15 +2,12 @@
 graders/triage_grader.py
 Computes reward (0.0–1.0) by comparing the agent's TriageAction
 against the ground-truth label stored in emails.json.
-
 Reward breakdown:
   priority  → 0.35
   category  → 0.35
   route     → 0.30
-
 For medium/hard emails, `acceptable_routes` lists additional valid routes.
 For hard emails with secondary intents, bonus credit is awarded.
-
 Secondary intent penalties:
   ignored (ground truth exists, agent gave None) → heavier penalty
   wrong   (agent guessed, but incorrectly)       → lighter penalty
