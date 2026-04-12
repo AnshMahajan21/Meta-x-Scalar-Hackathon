@@ -3,11 +3,10 @@ inference.py — Baseline Agent for Email Triage Environment
 ===========================================================
 Runs the agent across all 3 tasks (easy → medium → hard).
 Uses OpenAI client pointed at API_BASE_URL / MODEL_NAME / HF_TOKEN.
-
 Log format:
   [START] {"task_id": ..., "episode_id": ...}
   [STEP]  {"step": ..., "email_id": ..., "action": {...}, "reward": ..., "done": ...}
-  [END]   {"task_id": ..., "total_reward": ..., "steps": ...}
+  [END]   {"task_id": ..., "score": ..., "steps": ...}
 """
 
 import os
@@ -80,14 +79,12 @@ Your job is to read an email and decide:
 3. route      — must be exactly one of: billing_support, tier1_support, tier2_support, engineering_escalation, sales_team, sales_engineering, hr_recruitment, product_team, customer_success, customer_retention, legal_team, compliance_team, data_privacy_officer, partnerships_team
 4. secondary_category (optional) — same values as category, use only if the email has a clear second intent
 5. secondary_route (optional)    — same values as route, use only if there is a clear secondary routing need
-
 Rules:
 - urgent: time-sensitive, financial risk, legal threat, production outage, or strong churn signal
 - normal: needs resolution but no immediate deadline
 - low: informational, no action needed soon
 - Always route legal/GDPR/fraud emails to legal_team or compliance_team, NOT to billing or support
 - If an email contains multiple intents, identify the PRIMARY one and set secondary fields
-
 Respond ONLY with a valid JSON object — no explanation, no markdown, no extra text.
 Example:
 {
@@ -103,13 +100,10 @@ Example:
 def call_llm(email_subject: str, email_body: str, sender: str) -> dict:
     """Call the LLM and parse its triage decision."""
     user_message = f"""Triage this email:
-
 FROM: {sender}
 SUBJECT: {email_subject}
-
 BODY:
 {email_body}
-
 Respond with a JSON object only."""
 
     try:
@@ -218,32 +212,32 @@ def run_task(task_id: str) -> dict:
 
         # ── [STEP] ────────────────────────────────────────────────────────────
         _log("STEP", {
-            "task_id":           task_id,
-            "episode_id":        episode_id,
-            "step":              step_num,
-            "email_id":          result["info"].get("graded_email_id", "unknown"),
-            "action":            action_payload,
-            "reward":            reward,
-            "done":              done,
-            "cumulative_reward": result["info"].get("cumulative_reward", total_reward),
+            "task_id":    task_id,
+            "episode_id": episode_id,
+            "step":       step_num,
+            "email_id":   result.get("info", {}).get("graded_email_id", obs.get("email_id", "unknown")),
+            "action":     action_payload,
+            "reward":     reward,
+            "done":       done,
         })
 
-        # Small delay to avoid hammering the API
         time.sleep(0.5)
 
     # ── [END] ─────────────────────────────────────────────────────────────────
+    avg   = total_reward / max(step_num, 1)
+    score = min(max(round(avg, 4), 0.001), 0.999)
+
     _log("END", {
-        "task_id":      task_id,
-        "episode_id":   episode_id,
-        "total_reward": round(total_reward, 4),
-        "steps":        step_num,
-        "avg_reward":   round(total_reward / max(step_num, 1), 4),
+        "task_id":    task_id,
+        "episode_id": episode_id,
+        "score":      score,
+        "steps":      step_num,
     })
 
     return {
-        "task_id":      task_id,
-        "total_reward": round(total_reward, 4),
-        "steps":        step_num,
+        "task_id": task_id,
+        "score":   score,
+        "steps":   step_num,
     }
 
 
@@ -275,18 +269,16 @@ def main():
         except Exception as e:
             print(f"[ERROR] Task {task_id} failed: {e}", file=sys.stderr)
             _log("END", {
-                "task_id":      task_id,
-                "episode_id":   "error",
-                "total_reward": 0.0,
-                "steps":        0,
-                "avg_reward":   0.0,
+                "task_id":    task_id,
+                "episode_id": "error",
+                "score":      0.001,
+                "steps":      0,
             })
 
-    # Final summary to stderr (not evaluated)
     print("\n[INFO] === Final Summary ===", file=sys.stderr)
     for r in all_results:
         print(
-            f"[INFO] {r['task_id']}: total_reward={r['total_reward']}  steps={r['steps']}",
+            f"[INFO] {r['task_id']}: score={r['score']}  steps={r['steps']}",
             file=sys.stderr,
         )
 
